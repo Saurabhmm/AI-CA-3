@@ -1,129 +1,93 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-*.py[cod]
-*$py.class
+import json
+from logpy import Relation, facts, run, conde, var, eq
 
-# C extensions
-*.so
+# Now, Check if 'x' is the parent of 'y'
+def parent(x, y):
+    return conde([father(x, y)], [mother(x, y)])
 
-# Distribution / packaging
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-pip-wheel-metadata/
-share/python-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
+# Now, Check if 'x' is the grandparent of 'y'
+def grandparent(x, y):
+    temp = var()
+    return conde((parent(x, temp), parent(temp, y)))
 
-# PyInstaller
-#  Usually these files are written by a python script from a template
-#  before PyInstaller builds the exe, so as to inject date/other infos into it.
-*.manifest
-*.spec
+# Now, Check for sibling relationship between 'a' and 'b'  
+def sibling(x, y):
+    temp = var()
+    return conde((parent(temp, x), parent(temp, y)))
 
-# Installer logs
-pip-log.txt
-pip-delete-this-directory.txt
+# Now, Check if x is y's uncle
+def uncle(x, y):
+    temp = var()
+    return conde((father(temp, x), grandparent(temp, y)))
 
-# Unit test / coverage reports
-htmlcov/
-.tox/
-.nox/
-.coverage
-.coverage.*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.py,cover
-.hypothesis/
-.pytest_cache/
+if __name__=='__main__':
+    father = Relation()
+    mother = Relation()
+    
 
-# Translations
-*.mo
-*.pot
+    facts(father,('watson','Tom'),('watson','Harry'),('watson','Robert'),
+         ('Tom','jakson'),('Tom','Amelia'),('Harry','Mia'),('Harry','Ava'),('Harry','Camila'),
+	       ('Harry','Luna'),('Harry','Anna'),('Harry','Maya'))
+    facts(mother,('Alexa','Tom'),('Alexa','Harry'),('Alexa','Robert'),
+         ('Sadie','Amelia'),('Sadie','Jakson'),('Clara','Ava'),('Clara','Camila'),('Clara','Luna'),
+	       ('Clara','Anna'),('Clara','Maya'))
 
-# Django stuff:
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
 
-# Flask stuff:
-instance/
-.webassets-cache
+    x = var()
 
-# Scrapy stuff:
-.scrapy
+    # Watson's children
+    name = 'Watson'
+    output = run(0, x, father(name, x))
+    print("\nList of " + name + "'s children:")
+    for item in output:
+        print(item)
 
-# Sphinx documentation
-docs/_build/
+    # Tom's mother
+    name = 'Tom'
+    output = run(0, x, mother(x, name))[0]
+    print("\n" + name + "'s mother:\n" + output)
 
-# PyBuilder
-target/
+    # Robert's parents 
+    name = 'Robert'
+    output = run(0, x, parent(x, name))
+    print("\nList of " + name + "'s parents:")
+    for item in output:
+        print(item)
 
-# Jupyter Notebook
-.ipynb_checkpoints
+    # Mia's grandparents 
+    name = 'Mia'
+    output = run(0, x, grandparent(x, name))
+    print("\nList of " + name + "'s grandparents:")
+    for item in output:
+        print(item)
 
-# IPython
-profile_default/
-ipython_config.py
+    # Alexa's grandchildren 
+    name = 'Alexa'
+    output = run(0, x, grandparent(name, x))
+    print("\nList of " + name + "'s grandchildren:")
+    for item in output:
+        print(item)
 
-# pyenv
-.python-version
+    # Harry's siblings 
+    name = 'Harry'
+    output = run(0, x, sibling(x, name))
+    siblings = [x for x in output if x != name]
+    print("\nList of " + name + "'s siblings:")
+    for item in siblings:
+        print(item)
 
-# pipenv
-#   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
-#   However, in case of collaboration, if having platform-specific dependencies or dependencies
-#   having no cross-platform support, pipenv may install dependencies that don't work, or not
-#   install all needed dependencies.
-#Pipfile.lock
+    # Ava's uncles
+    name = 'Ava'
+    name_father = run(0, x, father(x, name))[0]
+    output = run(0, x, uncle(x, name))
+    output = [x for x in output if x != name_father]
+    print("\nList of " + name + "'s uncles:")
+    for item in output:
+        print(item)
 
-# PEP 582; used by e.g. github.com/David-OConnor/pyflow
-__pypackages__/
-
-# Celery stuff
-celerybeat-schedule
-celerybeat.pid
-
-# SageMath parsed files
-*.sage.py
-
-# Environments
-.env
-.venv
-env/
-venv/
-ENV/
-env.bak/
-venv.bak/
-
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
+    # All spouses
+    a, b, c = var(), var(), var()
+    output = run(0, (a, b), (father, a, c), (mother, b, c))
+    print("\nList of all spouses:")
+    for item in output:
+        print('Husband:', item[0], '<==> Wife:', item[1])
